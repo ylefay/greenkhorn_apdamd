@@ -1,0 +1,16 @@
+
+@InProceedings{pmlr-v97-lin19a,
+  title = 	 {On Efficient Optimal Transport: An Analysis of Greedy and Accelerated Mirror Descent Algorithms},
+  author =       {Lin, Tianyi and Ho, Nhat and Jordan, Michael},
+  booktitle = 	 {Proceedings of the 36th International Conference on Machine Learning},
+  pages = 	 {3982--3991},
+  year = 	 {2019},
+  editor = 	 {Chaudhuri, Kamalika and Salakhutdinov, Ruslan},
+  volume = 	 {97},
+  series = 	 {Proceedings of Machine Learning Research},
+  month = 	 {09--15 Jun},
+  publisher =    {PMLR},
+  pdf = 	 {http://proceedings.mlr.press/v97/lin19a/lin19a.pdf},
+  url = 	 {https://proceedings.mlr.press/v97/lin19a.html},
+  abstract = 	 {We provide theoretical analyses for two algorithms that solve the regularized optimal transport (OT) problem between two discrete probability measures with at most $n$ atoms. We show that a greedy variant of the classical Sinkhorn algorithm, known as the <em>Greenkhorn algorithm</em>, can be improved to $\bigOtil\left(n^2/\varepsilon^2\right)$, improving on the best known complexity bound of $\bigOtil\left(n^2/\varepsilon^3\right)$. This matches the best known complexity bound for the Sinkhorn algorithm and helps explain why the Greenkhorn algorithm outperforms the Sinkhorn algorithm in practice. Our proof technique is based on a primal-dual formulation and provide a <em>tight</em> upper bound for the dual solution, leading to a class of <em>adaptive primal-dual accelerated mirror descent</em> (APDAMD) algorithms. We prove that the complexity of these algorithms is $\bigOtil\left(n^2\sqrt{\gamma}/\varepsilon\right)$ in which $\gamma \in (0, n]$ refers to some constants in the Bregman divergence. Experimental results on synthetic and real datasets demonstrate the favorable performance of the Greenkhorn and APDAMD algorithms in practice.}
+}
