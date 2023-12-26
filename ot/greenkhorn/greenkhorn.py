@@ -34,7 +34,7 @@ def error(u, v, C, eta, r, c):
 
 def greenkhorn(C, eta, r, c, tol):
     """
-    Algorithm 1.
+    Algorithm 1. in Lin, Tianyi and Ho, Nhat and Jordan, Michael I. (2019)
     """
     n = C.shape[0]
     exp_minus_Cij_over_eta = jnp.exp(-C / eta)
@@ -76,14 +76,25 @@ def greenkhorn(C, eta, r, c, tol):
     return Buv
 
 
-def Round(F, U):
+def Round(F, U, r, c):
     """
     Algorithm 2. in Altschuler, Weed, Rigollet (2017)
     """
-    raise NotImplementedError
+    rF = r_fun(F)
+    X = jnp.diag(jnp.exp(jnp.min(r / rF, 1)))
+    F_p = X @ F
+    cF_p = c_fun(F)
+    Y = jnp.diag(jnp.exp(jnp.min(c / cF_p, 1)))
+    F_pp = F_p @ Y
+    err_r = r - r_fun(F_pp)
+    err_c = c - c_fun(F_pp)
+    return F_pp + err_r @ err_c.T / jnp.linalg.norm(err_r, order=1)
 
 
 def OT(C, r, c, eps):
+    """
+    Algorithm 2. in Tianyi Lin, Nhat Ho, Michael I. Jordan (2019)
+    """
     n = C.shape[0]
     eta = eps / (4 * jnp.log(n))
     eps_p = eps / (8 * jnp.linalg.norm(C, order='inf'))
