@@ -3,7 +3,7 @@
 The regularised optimal transport problem consists in finding a optimal transport map $X\in\mathbb{R}^{n\times n}$, such that it minimizes the cost function given by
 
 $$
-\langle C, X\rangle - \eta H(X), \text{s.t.} X1_n = r, X^{\top}1_n = c,
+\langle C, X\rangle - \eta H(X), \qquad\text{s.t.} X1_n = r,\qquad X^{\top}1_n = c,
 $$
 
 where $\eta > 0$ is a regularization parameter and $H(X) = -\sum_{i,j}X_{i,j}\log(X_{i,j})$ is the entropic regularization. The matrix $C$ has entries $C_{i,j}$ which is the cost to go from $i$ to $j$, $r$ and $c$ are the marginals for the transport map.
