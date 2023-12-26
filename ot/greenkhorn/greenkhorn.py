@@ -29,7 +29,7 @@ def error(u, v, C, eta, r, c):
     Error function defined in Section 3.
     """
     Buv = B(u, v, C, eta)
-    return jnp.linalg.norm(r_fun(Buv) - r, order=1) + jnp.linalg.norm(c_fun(Buv) - c, order=1)
+    return jnp.linalg.norm(r_fun(Buv) - r, ord=1) + jnp.linalg.norm(c_fun(Buv) - c, ord=1)
 
 
 def greenkhorn(C, eta, r, c, tol):
@@ -41,21 +41,20 @@ def greenkhorn(C, eta, r, c, tol):
     Buv = exp_minus_Cij_over_eta
     rBuv = r_fun(Buv)
     cBuv = c_fun(Buv)
-    Buv = exp_minus_Cij_over_eta
 
     def rho_r(b):
         return jax.vmap(rho, in_axes=(0, 0))(r, b)
 
     def criterion(inps):
         _, _, _, rBuv, Cbuv, _ = inps
-        return jnp.linalg.norm(rBuv - r, order=1) + jnp.linalg.norm(cBuv - c, order=1) > tol
+        return jnp.linalg.norm(rBuv - r, ord=1) + jnp.linalg.norm(cBuv - c, ord=1) > tol
 
     def iter(inps):
         n_iter, u, v, rBuv, cBuv, Buv = inps
         I = jnp.argmax(rho_r(rBuv))
-        J = jnp.argmax(rho(cBuv))
-        rhoRbuv = rho(rBuv.at[I].get())
-        rhoCbuv = rho(cBuv.at[J].get())
+        J = jnp.argmax(rho_r(cBuv))
+        rhoRbuv = rho_r(rBuv.at[I].get())
+        rhoCbuv = rho_r(cBuv.at[J].get())
         u, Buv = jax.lax.cond(rhoRbuv > rhoCbuv,
                               (u.at[I].set(u.at[I].get() + jnp.log(r.at[I].get()) - jnp.log(rBuv.at[I].get())),
                                Buv.at[I].set(Buv.at[I].get() * r.at[I].get() / rBuv.at[I].get())
@@ -76,19 +75,19 @@ def greenkhorn(C, eta, r, c, tol):
     return Buv
 
 
-def Round(F, U, r, c):
+def Round(F, r, c):
     """
     Algorithm 2. in Altschuler, Weed, Rigollet (2017)
     """
     rF = r_fun(F)
-    X = jnp.diag(jnp.exp(jnp.min(r / rF, 1)))
+    X = jnp.diag(jnp.min(r / rF, 1))
     F_p = X @ F
     cF_p = c_fun(F)
-    Y = jnp.diag(jnp.exp(jnp.min(c / cF_p, 1)))
+    Y = jnp.diag(jnp.min(c / cF_p, 1))
     F_pp = F_p @ Y
     err_r = r - r_fun(F_pp)
     err_c = c - c_fun(F_pp)
-    return F_pp + err_r @ err_c.T / jnp.linalg.norm(err_r, order=1)
+    return F_pp + err_r @ err_c.T / jnp.linalg.norm(err_r, ord=1)
 
 
 def OT(C, r, c, eps):
@@ -97,7 +96,7 @@ def OT(C, r, c, eps):
     """
     n = C.shape[0]
     eta = eps / (4 * jnp.log(n))
-    eps_p = eps / (8 * jnp.linalg.norm(C, order='inf'))
+    eps_p = eps / (8 * jnp.linalg.norm(C, ord=jnp.inf))
     r_tilde = (1 - eps_p / 8) * r + eps_p / (8 * n) * jnp.ones(n, )
     c_tilde = (1 - eps_p / 8) * c + eps_p / (8 * n) * jnp.ones(n, )
     X_tilde = greenkhorn(C, eta, r_tilde, c_tilde, eps_p / 2)
