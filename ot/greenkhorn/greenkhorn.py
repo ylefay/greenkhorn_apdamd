@@ -1,5 +1,6 @@
 import jax.lax
 import jax.numpy as jnp
+from ot.ot import Round, r_fun, c_fun
 
 jax.config.update("jax_enable_x64", True)
 jax.config.update("jax_debug_nans", True)
@@ -11,20 +12,6 @@ def rho(a, b):
 
 def B(u, v, C, eta):
     return jnp.diag(jnp.exp(u)) @ jnp.exp(-C / eta) @ jnp.diag(jnp.exp(v))
-
-
-def r_fun(A):
-    """
-    Row sum
-    """
-    return jnp.sum(A, axis=1)
-
-
-def c_fun(A):
-    """
-    Column sum
-    """
-    return jnp.sum(A, axis=0)
 
 
 def error(Buv, r, c):
@@ -76,21 +63,6 @@ def greenkhorn(C, eta, r, c, tol, iter_max=100):
     inps = (0, u, v, rBuv, cBuv, Buv)
     n_iter, _, _, _, _, Buv = jax.lax.while_loop(criterion, iter, inps)
     return Buv, n_iter, error(Buv, r, c)
-
-
-def Round(F, r, c):
-    """
-    Algorithm 2. in Altschuler, Weed, Rigollet (2017)
-    """
-    rF = r_fun(F)
-    X = jnp.diag(jax.vmap(lambda x: jnp.min(jnp.array([x, 1])))(r / rF))
-    F_p = X @ F
-    cF_p = c_fun(F_p)
-    Y = jnp.diag(jax.vmap(lambda x: jnp.min(jnp.array([x, 1])))(c / cF_p))
-    F_pp = F_p @ Y
-    err_r = r - r_fun(F_pp)
-    err_c = c - c_fun(F_pp)
-    return F_pp + err_r @ err_c.T / jnp.linalg.norm(err_r, ord=1)
 
 
 def OT(C, r, c, eps, iter_max=1000):

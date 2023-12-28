@@ -1,9 +1,9 @@
 import numpy as np
-from ot.greenkhorn.greenkhorn import OT
-from ot.ot import penalised_cost
+from ot.apdamd.apdamd import OT
+from ot.ot import penalised_cost, Round
 
 
-def test_greenkhorn(eps=1.0):
+def test_apdamd(eps=1.0):
     np.random.seed(1)
 
     def Gaussian_OT(Gaussian_1, Gaussian_2):
@@ -42,21 +42,27 @@ def test_greenkhorn(eps=1.0):
     c = np.vectorize(pdf, signature='(n),(m),(l, r)->()')(samples_2, m2, cov2)
     r = r / np.sum(r)
     c = c / np.sum(c)
-    tp, _, _ = OT(C, r, c, eps)
-    print(tp)
-    r = np.array([0.5, 0.5])
-    c = np.array([0.5, 0.5])
-    C = np.array([[0., 1.], [1.0, 0.]])
+    n = c.shape[0]
+    X = np.random.rand(n ** 2).reshape((n, n))
+    X /= np.sum(X)
+    # tp, _, _ = OT(X, C, r, c, eps)
+    # print(tp)
+    r = np.array([0.5, 0.3, 0.2])
+    c = np.array([0.5, 0.3, 0.2])
+    C = np.array([[0., 0.7, 0.3], [0.7, 0., 0.3], [0.3, 0.3, 0.4]])
+    n = r.shape[0]
+    X = np.random.rand(n ** 2).reshape((n, n))
+    X = Round(X, r, c)
+    X /= np.sum(X)
     eta = 0.05
     eps = 4 * np.log(2) * eta
-    tp, n_iter, _ = OT(C, r, c, eps)
-    n = r.shape[0]
+    tp, n_iter, _ = OT(X, C, r, c, eps)
     print(tp)
     assert np.allclose(tp @ np.ones(n, ), r)
     assert np.allclose(tp.T @ np.ones(n, ), c)
     print(penalised_cost(C, tp, eta))
+    print(tp)
     print(n_iter)
-    print(T(samples_1[0]))
 
 
-test_greenkhorn(eps=0.5)
+test_apdamd(eps=0.5)
