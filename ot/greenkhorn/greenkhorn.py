@@ -1,34 +1,27 @@
 import jax.lax
 import jax.numpy as jnp
-from ot.ot import Round, r_fun, c_fun
+from ot.ot import r_fun, c_fun
 
 jax.config.update("jax_enable_x64", True)
-jax.config.update("jax_debug_nans", True)
 
 
 def rho(a, b):
     return b - a + a * jnp.log(a / b)
 
 
-def B(u, v, C, eta):
-    return jnp.diag(jnp.exp(u)) @ jnp.exp(-C / eta) @ jnp.diag(jnp.exp(v))
-
-
-def error(Buv, r, c):
-    """
-    Error function defined in Section 3.
-    """
-    return jnp.linalg.norm(r_fun(Buv) - r, ord=1) + jnp.linalg.norm(c_fun(Buv) - c, ord=1)
-
-
-def greenkhorn(C, eta, r, c, tol, iter_max=100):
+def greenkhorn(X, C, eta, r, c, tol, iter_max):
     """
     Algorithm 1. in Lin, Tianyi and Ho, Nhat and Jordan, Michael I. (2019)
     """
     n = C.shape[0]
-    u, v = - jnp.log(n) * jnp.ones(n), - jnp.log(n) * jnp.ones(n)
-    exp_minus_Cij_over_eta = jnp.exp(-C / eta)
-    Buv = B(u, v, C, eta)
+    if X is None:
+        u, v = - jnp.log(n) * jnp.ones(n), - jnp.log(n) * jnp.ones(n)
+        Buv = jnp.diag(jnp.exp(u)) @ jnp.exp(-C / eta) @ jnp.diag(jnp.exp(v))
+    else:
+        Buv = X
+        _ = X * jnp.exp(C / eta)
+        u = jnp.log(jnp.sum(_, axis=1))
+        v = jnp.log(jnp.sum(_, axis=0))
     rBuv = r_fun(Buv)
     cBuv = c_fun(Buv)
 
@@ -62,18 +55,4 @@ def greenkhorn(C, eta, r, c, tol, iter_max=100):
 
     inps = (0, u, v, rBuv, cBuv, Buv)
     n_iter, _, _, _, _, Buv = jax.lax.while_loop(criterion, iter, inps)
-    return Buv, n_iter, error(Buv, r, c)
-
-
-def OT(C, r, c, eps, iter_max=1000):
-    """
-    Algorithm 2. in Tianyi Lin, Nhat Ho, Michael I. Jordan (2019)
-    """
-    n = C.shape[0]
-    eta = eps / (4 * jnp.log(n))
-    eps_p = eps / (8 * jnp.linalg.norm(C, ord=jnp.inf))
-    r_tilde = (1 - eps_p / 8) * r + eps_p / (8 * n) * jnp.ones(n, )
-    c_tilde = (1 - eps_p / 8) * c + eps_p / (8 * n) * jnp.ones(n, )
-    X_tilde, n_iter, err = greenkhorn(C, eta, r_tilde, c_tilde, eps_p / 2, iter_max)
-    X_hat = Round(X_tilde, r, c)
-    return X_hat, n_iter, eps
+    return Buv, n_iter

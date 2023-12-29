@@ -26,7 +26,8 @@ def xlogx(x):
 
 
 def penality(X, eta):
-    return eta * jnp.sum(xlogx(X))
+    vecX = X.reshape(-1, order='F')
+    return eta * jnp.sum(xlogx(vecX))
 
 
 def penalised_cost(C, X, eta):
