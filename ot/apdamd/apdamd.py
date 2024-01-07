@@ -38,7 +38,7 @@ def apdamd(f, bregman, phi, x, A, b, eps_p, delta, x_fun, z_fun, iter_max):
 
     def criterion_iter(inps):
         n_iter, M, _, _, mu, _, Lambda = inps
-        return ((n_iter < iter_max) & (
+        return ((n_iter < jnp.inf) & (
                 bregman(Lambda, mu) > M / 2 * jnp.linalg.norm(Lambda - mu, ord=jnp.inf) ** 2)) | (n_iter == 0)
 
     if x_fun is None:  # Fallback to scipy optimizer for computing x_fun given f.
@@ -60,7 +60,6 @@ def apdamd(f, bregman, phi, x, A, b, eps_p, delta, x_fun, z_fun, iter_max):
         n_iter, x, alpha_bar, alpha, L, z, mu, Lambda = inps
         M = L / 2
         inps = (0, M, alpha_bar, alpha, mu, z, Lambda)
-
         _, M, alpha_bar, alpha, mu, z, Lambda = jax.lax.while_loop(criterion_iter, iter_iter_fun, inps)
         x = (alpha * x_fun(mu, x) + alpha_bar * x) / alpha_bar
         L = M / 2

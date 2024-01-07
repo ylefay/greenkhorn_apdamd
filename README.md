@@ -1,6 +1,6 @@
 # JAX implementation of the Greenkhorn Algorithm for Discrete Regularised Optimal Transport
 
-The regularised optimal transport problem consists in finding a optimal transport map $X\in\mathbb{R}^{n\times n}$, such that it minimizes the cost function given by
+The regularised optimal transport problem consists in finding an optimal transport map $X\in\mathbb{R}^{n\times n}$, such that it minimizes the cost function given by
 
 $$
 \langle C, X\rangle - \eta H(X), \qquad\text{s.t.}\qquad X1_n = r,\qquad X^{\top}1_n = c,

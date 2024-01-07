@@ -27,7 +27,7 @@ def greenkhorn(X, C, eta, r, c, tol, iter_max):
 
     def criterion(inps):
         n_iter, _, _, rBuv, Cbuv, _ = inps
-        return (jnp.linalg.norm(rBuv - r, ord=1) + jnp.linalg.norm(cBuv - c, ord=1) > tol) & (n_iter < iter_max)
+        return ((jnp.linalg.norm(rBuv - r, ord=1) + jnp.linalg.norm(cBuv - c, ord=1)) > tol) & (n_iter < iter_max)
 
     def iter(inps):
         n_iter, u, v, rBuv, cBuv, Buv = inps
@@ -48,7 +48,6 @@ def greenkhorn(X, C, eta, r, c, tol, iter_max):
                                   Buv.at[:, J].set(Buv.at[:, J].get() * c.at[J].get() / cBuv.at[J].get())
                               ),
                               None)
-        Buv = Buv / jnp.sum(Buv)
         rBuv = r_fun(Buv)
         cBuv = c_fun(Buv)
         return n_iter + 1, u, v, rBuv, cBuv, Buv

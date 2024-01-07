@@ -1,6 +1,9 @@
 import numpy as np
 from ot.ot import Round
 from ot.gaussian_ot import pdf
+import jax
+
+jax.config.update("jax_enable_x64", True)
 
 
 def sample_problem(n=2):
@@ -12,7 +15,7 @@ def sample_problem(n=2):
     c = np.random.rand(n)
     c /= np.sum(c)
     X = Round(X, r, c)
-    return X, C, r, c
+    return X.astype(np.float64), C.astype(np.float64), r.astype(np.float64), c.astype(np.float64)
 
 
 def simple_problem():
@@ -22,10 +25,10 @@ def simple_problem():
     C = np.array([[0., 1.], [1.0, 0.]])
     X = np.random.rand(n ** 2).reshape((n, n))
     X = Round(X, r, c)
-    return X, C, r, c
+    return X.astype(np.float64), C.astype(np.float64), r.astype(np.float64), c.astype(np.float64)
 
 
-def sample_gaussian_OT(n, N_samples, Gaussians):
+def sample_gaussian_OT(n, N_samples, Gaussians=None):
     if Gaussians is None:
         m1 = np.random.randn(n)
         m2 = np.random.randn(n)
@@ -44,7 +47,7 @@ def sample_gaussian_OT(n, N_samples, Gaussians):
     # c = np.vectorize(pdf, signature='(n),(m),(l, r)->()')(samples_2, m2, cov2)
     r = pdf(samples_1, m1, cov1)
     c = pdf(samples_2, m2, cov2)
-    X = np.random.rand(n ** 2).reshape((n, n))
+    X = np.random.rand(N_samples ** 2).reshape((N_samples, N_samples))
     X = Round(X, r, c)
     X /= np.sum(X)
-    return X, C, r, c
+    return X.astype(np.float64), C.astype(np.float64), r.astype(np.float64), c.astype(np.float64)
