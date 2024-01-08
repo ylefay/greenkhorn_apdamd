@@ -51,3 +51,37 @@ def sample_gaussian_OT(n, N_samples, Gaussians=None):
     X = Round(X, r, c)
     X /= np.sum(X)
     return X.astype(np.float64), C.astype(np.float64), r.astype(np.float64), c.astype(np.float64)
+
+
+def sample_gaussian_OT_exact(N, n, Gaussians=None):
+    vmin = 0.01
+    if Gaussians is None:
+        m1 = np.random.randn(n)
+        m2 = np.random.randn(n)
+        cov1 = np.random.randn(n, n)
+        cov1 = cov1 @ cov1.T
+        cov2 = np.random.randn(n, n)
+        cov2 = cov2 @ cov2.T
+    else:
+        m1, cov1 = Gaussians[0]
+        m2, cov2 = Gaussians[1]
+    sigma1 = np.linalg.cholesky(cov1)
+    sigma2 = np.linalg.cholesky(cov2)
+    t1 = np.linspace(m1 - 2 * sigma1, m1 + 2 * sigma1, N).reshape((N, n))
+    t2 = np.linspace(m2 - 2 * sigma2, m2 + 2 * sigma2, N).reshape((N, n))
+    r = pdf(t1, m1, cov1)
+    r += np.max(r) * vmin
+    c = pdf(t2, m2, cov2)
+    c += np.max(c) * vmin
+    r /= np.sum(r)
+    c /= np.sum(c)
+    t12 = np.sum(t1 ** 2, axis=1)
+    t22 = np.sum(t2 ** 2, axis=1)
+    t1xt2 = np.dot(t1, t2.T)
+    t12 = t12.reshape(-1, 1)
+    C = np.sqrt(t12 + t22 - 2 * t1xt2)
+
+    OT = np.random.rand(N ** 2).reshape((N, N))
+    OT = Round(OT, r, c)
+    OT /= np.sum(OT)
+    return OT.astype(np.float64), C.astype(np.float64), r.astype(np.float64), c.astype(np.float64)

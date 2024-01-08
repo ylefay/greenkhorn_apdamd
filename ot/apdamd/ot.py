@@ -5,6 +5,19 @@ from ot.apdamd.apdamd import apdamd
 
 jax.config.update("jax_enable_x64", True)
 
+
+def theoretical_bound_on_iter(C, r, c, eps, delta=None):
+    n = C.shape[0]
+    if delta is None:
+        delta = n
+    eta = eps / (4 * jnp.log(n))
+    eps_p = eps / (8 * jnp.linalg.norm(C, ord=jnp.inf))
+    R = 1 / eta * jnp.linalg.norm(C, ord=jnp.inf) + jnp.log(n) - 2 * jnp.log(
+        jnp.min(jnp.array([jnp.min(r), jnp.min(c)])))
+    iter_max = 1 + 4 * jnp.sqrt(2) * 2 * jnp.sqrt(2 * delta * (R + 1 / 2) / eps_p)
+    return iter_max
+
+
 def OT(X, C, r, c, eps, phi=None, bregman=None, delta=None, x_fun=None, z_fun=None, iter_max=100000000):
     """
     Algorithm 4. in Tianyi Lin, Nhat Ho, Michael I. Jordan (2019)
@@ -46,9 +59,7 @@ def OT(X, C, r, c, eps, phi=None, bregman=None, delta=None, x_fun=None, z_fun=No
             delta = n
 
     if iter_max is None:
-        R = 1 / eta * jnp.linalg.norm(C, ord=jnp.inf) + jnp.log(n) - 2 * jnp.log(
-            jnp.min(jnp.array([jnp.min(r), jnp.min(c)])))
-        iter_max = 1 + 4 * jnp.sqrt(2) * 2 * jnp.sqrt(2 * delta * (R + 1 / 2) / eps_p)
+        iter_max = theoretical_bound_on_iter(C, r, c, eps, delta)
         iter_max = jnp.min(jnp.array([1e10, jnp.int64(iter_max)]))
     X_tilde, n_iter = apdamd(f, bregman, phi, vecX, A, b, eps_p / 2, delta=delta, x_fun=x_fun, z_fun=z_fun,
                              iter_max=iter_max)
