@@ -40,14 +40,12 @@ def OT(X, C, r, c, eps, iter_max=100000000):
     b = jnp.hstack([r_tilde, c_tilde])
     vecX = jnp.reshape(X, (n ** 2,), order='F')
     vecC = jnp.reshape(C, -1, order='F')
-    A = jnp.hstack([X @ jnp.ones(n, ), X.T @ jnp.ones(n, )]).reshape(2 * n, 1) @ vecX.T.reshape(1, n ** 2) * 1 / (
-            vecX @ vecX.T)
 
     def f(x):  # x = vecX
-        return vecC.T @ x + penality(x, eta)
+        return vecC @ x + penality(x, eta)
 
     def A(x):
-        X = x.reshape(n, n)
+        X = x.reshape(n, n, order='F')
         return jnp.hstack((jnp.sum(X, axis=1), jnp.sum(X, axis=0)))
 
     def At(x):
@@ -62,7 +60,7 @@ def OT(X, C, r, c, eps, iter_max=100000000):
         return 1 / (2 * n) * jnp.linalg.norm(x - x_p, ord=2) ** 2
 
     def x_fun(Lamb, x):  # argmin_x f(x) + <A.T @ Lambda, x>
-        return jnp.exp((-vecC.T + At(Lamb)) / eta - 1)
+        return jnp.exp(-(vecC.T + At(Lamb)) / eta - 1)
 
     def varphi_tilde(Lambd):
         alpha = Lambd.at[:n].get()
@@ -72,9 +70,12 @@ def OT(X, C, r, c, eps, iter_max=100000000):
 
     bregman_varphi_tilde = bregman_divergence(varphi_tilde)
 
+    def bregman_varphi_tilde(x, y):
+        return varphi_tilde(x) - varphi_tilde(y) - (x - y).T @ (b - A(x_fun(y, None)))
+
     def z_fun(z, mu, alpha):
-        # return - alpha * n * jax.grad(varphi_tilde)(mu) + z
-        return - alpha * n * (b - A(x_fun(mu, None))) + z
+        # return z - alpha * n * jax.grad(varphi_tilde)(mu)
+        return z - alpha * n * (b - A(x_fun(mu, None)))
 
     delta = n
 
