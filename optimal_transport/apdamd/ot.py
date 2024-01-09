@@ -6,6 +6,13 @@ from optimal_transport.apdamd.apdamd import apdamd
 jax.config.update("jax_enable_x64", True)
 
 
+def bregman_divergence(phi):
+    def bregman(x, y):
+        return phi(x) - phi(y) - (x - y).T @ jax.grad(phi)(y)
+
+    return bregman
+
+
 def theoretical_bound_on_iter(C, r, c, eps, delta=None):
     n = C.shape[0]
     if delta is None:
@@ -46,7 +53,7 @@ def OT(X, C, r, c, eps, iter_max=100000000):
     def At(x):
         alpha = x.at[:n].get()
         beta = x.at[n:].get()
-        return jnp.add.outer(alpha, beta).flatten()
+        return jnp.add(alpha.reshape(n, 1), beta).flatten()
 
     def phi(x):
         return 1 / (2 * n) * jnp.linalg.norm(x, ord=2) ** 2
@@ -63,6 +70,8 @@ def OT(X, C, r, c, eps, iter_max=100000000):
         return Lambd @ b - eta * jnp.log(
             jnp.einsum("i,j,ij->", jnp.exp(alpha / eta), jnp.exp(beta / eta), jnp.exp(-C / eta)))
 
+    bregman_varphi_tilde = bregman_divergence(varphi_tilde)
+
     def z_fun(z, mu, alpha):
         # return - alpha * n * jax.grad(varphi_tilde)(mu) + z
         return - alpha * n * (b - A(x_fun(mu, None))) + z
@@ -73,7 +82,7 @@ def OT(X, C, r, c, eps, iter_max=100000000):
         iter_max = theoretical_bound_on_iter(C, r, c, eps, delta)
         iter_max = jnp.min(jnp.array([1e10, jnp.int64(iter_max)]))
 
-    x_tilde, n_iter = apdamd(varphi=varphi_tilde, bregman_varphi=None, x=vecX, A=A, At=At,b=b,
+    x_tilde, n_iter = apdamd(varphi=varphi_tilde, bregman_varphi=bregman_varphi_tilde, x=vecX, A=A, At=At, b=b,
                              eps_p=eps_p / 2, f=f, bregman_phi=bregman_phi, phi=phi, delta=delta,
                              x_fun=x_fun, z_fun=z_fun,
                              iter_max=iter_max)

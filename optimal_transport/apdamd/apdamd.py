@@ -12,26 +12,15 @@ def bregman_divergence(phi):
     return bregman
 
 
-def apdamd(varphi, bregman_varphi, x, A, At, b, eps_p, f, bregman_phi=None, phi=None, delta=None, x_fun=None, z_fun=None,
+def apdamd(varphi, bregman_varphi, x, A, At, b, eps_p, f, bregman_phi, phi, delta, x_fun, z_fun,
            iter_max=None):
-    n = A.shape[-1]
-    m = A.shape[0]
+    n = x.shape[0]
+    m = b.shape[0]
     alpha_bar = 0
     alpha = 0
     L = 1
     common_value = jnp.zeros(m, )
     z, mu, Lambd = common_value, common_value, common_value
-
-    if phi is None:
-        def phi(x):
-            return 1 / n * jnp.linalg.norm(x, ord=2) ** 2
-
-        def bregman_phi(x, x_p):
-            return 1 / n * jnp.linalg.norm(x - x_p, ord=2) ** 2
-    if bregman_phi is None:
-        bregman_phi = bregman_divergence(phi)
-    if bregman_varphi is None:
-        bregman_varphi = bregman_divergence(varphi)
 
     if z_fun is None:  # Fallback to scipy optimizer for computing z_fun given phi.
         def objective(z, z_p, mu, alpha):
