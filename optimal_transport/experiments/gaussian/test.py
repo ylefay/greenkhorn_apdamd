@@ -15,4 +15,4 @@ my_problem = sample_gaussian_OT_exact(N, n, (Gaussian1, Gaussian2))
 
 
 my_simple_problem = simple_problem()
-print(apdamd(*my_simple_problem, eps=0.01, iter_max=None))
+print(apdamd(*my_simple_problem, eps=0.1, iter_max=1000))

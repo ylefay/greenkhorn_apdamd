@@ -21,7 +21,7 @@ def theoretical_bound_on_iter(C, r, c, eps, delta=None):
 def OT(X, C, r, c, eps, iter_max=100000000):
     """
     Algorithm 4. in Tianyi Lin, Nhat Ho, Michael I. Jordan (2019)
-    Using phi = 1 / (2 n_apdamd) ||x||^2_2.
+    Using phi = 1 / (2 n) ||x||^2_2.
     """
     n = C.shape[0]
     if X is None:
@@ -39,6 +39,15 @@ def OT(X, C, r, c, eps, iter_max=100000000):
     def f(x):  # x = vecX
         return vecC.T @ x + penality(x, eta)
 
+    def A(x):
+        X = x.reshape(n, n)
+        return jnp.hstack((jnp.sum(X, axis=1), jnp.sum(X, axis=0)))
+
+    def At(x):
+        alpha = x.at[:n].get()
+        beta = x.at[n:].get()
+        return jnp.add.outer(alpha, beta).flatten()
+
     def phi(x):
         return 1 / (2 * n) * jnp.linalg.norm(x, ord=2) ** 2
 
@@ -46,7 +55,7 @@ def OT(X, C, r, c, eps, iter_max=100000000):
         return 1 / (2 * n) * jnp.linalg.norm(x - x_p, ord=2) ** 2
 
     def x_fun(Lamb, x):  # argmin_x f(x) + <A.T @ Lambda, x>
-        return jnp.exp(-(vecC.T + A.T @ Lamb) / eta - jnp.ones(A.shape[-1], ))
+        return jnp.exp((-vecC.T + At(Lamb)) / eta - 1)
 
     def varphi_tilde(Lambd):
         alpha = Lambd.at[:n].get()
@@ -55,7 +64,8 @@ def OT(X, C, r, c, eps, iter_max=100000000):
             jnp.einsum("i,j,ij->", jnp.exp(alpha / eta), jnp.exp(beta / eta), jnp.exp(-C / eta)))
 
     def z_fun(z, mu, alpha):
-        return - alpha * n * jax.grad(varphi_tilde)(mu) + z
+        # return - alpha * n * jax.grad(varphi_tilde)(mu) + z
+        return - alpha * n * (b - A(x_fun(mu, None))) + z
 
     delta = n
 
@@ -63,7 +73,7 @@ def OT(X, C, r, c, eps, iter_max=100000000):
         iter_max = theoretical_bound_on_iter(C, r, c, eps, delta)
         iter_max = jnp.min(jnp.array([1e10, jnp.int64(iter_max)]))
 
-    x_tilde, n_iter = apdamd(varphi=varphi_tilde, bregman_varphi=None, x=vecX, A=A, b=b,
+    x_tilde, n_iter = apdamd(varphi=varphi_tilde, bregman_varphi=None, x=vecX, A=A, At=At,b=b,
                              eps_p=eps_p / 2, f=f, bregman_phi=bregman_phi, phi=phi, delta=delta,
                              x_fun=x_fun, z_fun=z_fun,
                              iter_max=iter_max)
