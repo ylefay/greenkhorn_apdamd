@@ -1,6 +1,6 @@
 import numpy as np
-from ot.ot import Round
-from ot.gaussian_ot import pdf
+from optimal_transport.ot import Round
+from optimal_transport.gaussian_ot import pdf
 import jax
 
 jax.config.update("jax_enable_x64", True)

@@ -1,7 +1,7 @@
 import numpy as np
-from ot.tests.sample_problem import sample_problem, simple_problem
-from ot.greenkhorn.ot import OT as greenkhorn
-from ot.apdamd.ot import OT as apdamd
+from optimal_transport.tests.sample_problem import sample_problem, simple_problem
+from optimal_transport.greenkhorn.ot import OT as greenkhorn
+from optimal_transport.apdamd.ot import OT as apdamd
 
 OT = [greenkhorn]
 

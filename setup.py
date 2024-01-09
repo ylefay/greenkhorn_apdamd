@@ -10,7 +10,7 @@ except Exception as e:
     long_description = ""
 
 setuptools.setup(
-    name="ot",
+    name="optimal_transport",
     author="Yvann Le Fay",
     description="JAX implementation of the Greenkhorn Algorithm and adaptive primal-dual accelerated mirror descent (APDAMD) Algorithms.",
     long_description=long_description,

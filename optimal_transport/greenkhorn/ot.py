@@ -1,6 +1,6 @@
 import jax.numpy as jnp
-from ot.ot import Round
-from ot.greenkhorn.greenkhorn import greenkhorn
+from optimal_transport.ot import Round
+from optimal_transport.greenkhorn.greenkhorn import greenkhorn
 import jax
 
 

@@ -25,13 +25,13 @@ def xlogx(x):
     return jax.lax.cond(x > 0, lambda x: x * jnp.log(x), lambda x: 0., x)
 
 
-def penality(X, eta):
+def penality(X):
     vecX = X.reshape(-1, order='F')
-    return eta * jnp.sum(xlogx(vecX))
+    return -(jnp.sum(xlogx(vecX) - vecX))
 
 
 def penalised_cost(C, X, eta):
-    return cost(C, X) + penality(X, eta)
+    return cost(C, X) - eta * penality(X)
 
 
 def Round(F, r, c):

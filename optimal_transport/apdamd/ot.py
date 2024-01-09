@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 import jax
-from ot.ot import Round, penality
-from ot.apdamd.apdamd import apdamd
+from optimal_transport.ot import Round, penality
+from optimal_transport.apdamd.apdamd import apdamd
 
 jax.config.update("jax_enable_x64", True)
 
@@ -14,13 +14,14 @@ def theoretical_bound_on_iter(C, r, c, eps, delta=None):
     eps_p = eps / (8 * jnp.linalg.norm(C, ord=jnp.inf))
     R = 1 / eta * jnp.linalg.norm(C, ord=jnp.inf) + jnp.log(n) - 2 * jnp.log(
         jnp.min(jnp.array([jnp.min(r), jnp.min(c)])))
-    iter_max = 1 + 4 * jnp.sqrt(2) * 2 * jnp.sqrt(2 * delta * (R + 1 / 2) / eps_p)
+    iter_max = 1 + jnp.sqrt(128 * delta * R / eps_p)
     return iter_max
 
 
-def OT(X, C, r, c, eps, phi=None, bregman=None, delta=None, x_fun=None, z_fun=None, iter_max=100000000):
+def OT(X, C, r, c, eps, iter_max=100000000):
     """
     Algorithm 4. in Tianyi Lin, Nhat Ho, Michael I. Jordan (2019)
+    Using phi = 1 / (2 n_apdamd) ||x||^2_2.
     """
     n = C.shape[0]
     if X is None:
@@ -36,32 +37,36 @@ def OT(X, C, r, c, eps, phi=None, bregman=None, delta=None, x_fun=None, z_fun=No
             vecX @ vecX.T)
 
     def f(x):  # x = vecX
-        return vecC.T @ x - penality(x, eta)
+        return vecC.T @ x + penality(x, eta)
 
-    if phi is None:
-        # Fallback to phi(z) = 1/(2n) ||z||_2^2
-        # Thus, B_phi(z, z') = 1/ n ||z - z'||_2^2
-        # And, first-order condition for z is z = n alpha grad(phi)(mu) + z' = - alpha * mu + z'
+    def phi(x):
+        return 1 / (2 * n) * jnp.linalg.norm(x, ord=2) ** 2
 
-        def phi(x):
-            return 1 / (2 * n) * jnp.linalg.norm(x, ord=2) ** 2
+    def bregman_phi(x, x_p):
+        return 1 / (2 * n) * jnp.linalg.norm(x - x_p, ord=2) ** 2
 
-        def z_fun(z, mu, alpha):
-            return - alpha * mu + z
+    def x_fun(Lamb, x):  # argmin_x f(x) + <A.T @ Lambda, x>
+        return jnp.exp(-(vecC.T + A.T @ Lamb) / eta - jnp.ones(A.shape[-1], ))
 
-        def bregman(z, z_p):
-            return 1 / n * jnp.linalg.norm(z - z_p, ord=2) ** 2
+    def varphi_tilde(Lambd):
+        alpha = Lambd.at[:n].get()
+        beta = Lambd.at[n:].get()
+        return Lambd @ b - eta * jnp.log(
+            jnp.einsum("i,j,ij->", jnp.exp(alpha / eta), jnp.exp(beta / eta), jnp.exp(-C / eta)))
 
-        def x_fun(Lambda, x):  # argmin_x f(x) + A.T @ Lambda @ x
-            return jnp.exp(-(vecC.T + A.T @ Lambda) / eta)
+    def z_fun(z, mu, alpha):
+        return - alpha * n * jax.grad(varphi_tilde)(mu) + z
 
-        if delta is None:
-            delta = n
+    delta = n
 
     if iter_max is None:
         iter_max = theoretical_bound_on_iter(C, r, c, eps, delta)
         iter_max = jnp.min(jnp.array([1e10, jnp.int64(iter_max)]))
-    X_tilde, n_iter = apdamd(f, bregman, phi, vecX, A, b, eps_p / 2, delta=delta, x_fun=x_fun, z_fun=z_fun,
+
+    x_tilde, n_iter = apdamd(varphi=varphi_tilde, bregman_varphi=None, x=vecX, A=A, b=b,
+                             eps_p=eps_p / 2, f=f, bregman_phi=bregman_phi, phi=phi, delta=delta,
+                             x_fun=x_fun, z_fun=z_fun,
                              iter_max=iter_max)
+    X_tilde = jnp.reshape(x_tilde, (n, n), order='F')
     X_hat = Round(X_tilde, r, c)
     return X_hat, n_iter

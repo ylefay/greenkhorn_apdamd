@@ -1,6 +1,6 @@
 import jax.lax
 import jax.numpy as jnp
-from ot.ot import r_fun, c_fun
+from optimal_transport.ot import r_fun, c_fun
 
 jax.config.update("jax_enable_x64", True)
 
@@ -26,7 +26,7 @@ def greenkhorn(X, C, eta, r, c, tol, iter_max):
     cBuv = c_fun(Buv)
 
     def criterion(inps):
-        n_iter, _, _, rBuv, Cbuv, _ = inps
+        n_iter, _, _, rBuv, cBuv, Buv = inps
         return ((jnp.linalg.norm(rBuv - r, ord=1) + jnp.linalg.norm(cBuv - c, ord=1)) > tol) & (n_iter < iter_max)
 
     def iter(inps):
