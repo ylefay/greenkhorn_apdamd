@@ -6,7 +6,7 @@ $$
 \langle C, X\rangle - \eta H(X), \qquad\text{s.t.}\qquad X1_n = r,\qquad X^{\top}1_n = c,
 $$
 
-where $\eta > 0$ is a regularization parameter and $H(X) = -\sum_{i,j}X_{i,j}\log(X_{i,j})$ is the entropic regularization. The matrix $C$ has entries $C_{i,j}$ which is the cost to go from $i$ to $j$, $r$ and $c$ are the marginals for the transport map.
+where $\eta > 0$ is a regularization parameter and $H(X) = -\sum_{i,j}X_{i,j}(\log(X_{i,j})-1)$ is the entropic regularization. The matrix $C$ has entries $C_{i,j}$ which is the cost to go from $i$ to $j$, $r$ and $c$ are the marginals for the transport map.
 The dual problem reduces to computing two dual potentials which satisfy first-order conditions. This gives rise to a fixed-point equation that the two potentials must satisfy. These two equations can be iterated one after the other, and this gives rise to the so-called Sinkhorn Algorithm.
 The Greenkhorn Algorithm is a greedy version of Sinkhorn algorithm that reach the optimal complexity bounds derived for the Sinkhorn Algorithm.
 

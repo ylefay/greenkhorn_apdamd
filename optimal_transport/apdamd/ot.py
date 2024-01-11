@@ -1,16 +1,9 @@
 import jax.numpy as jnp
 import jax
-from optimal_transport.ot import Round, penality
+from optimal_transport.ot import Round
 from optimal_transport.apdamd.apdamd import apdamd
 
 jax.config.update("jax_enable_x64", True)
-
-
-def bregman_divergence(phi):
-    def bregman(x, y):
-        return phi(x) - phi(y) - (x - y).T @ jax.grad(phi)(y)
-
-    return bregman
 
 
 def theoretical_bound_on_iter(C, r, c, eps, delta=None):
@@ -25,68 +18,22 @@ def theoretical_bound_on_iter(C, r, c, eps, delta=None):
     return iter_max
 
 
-def OT(X, C, r, c, eps, iter_max=100000000):
+def OT(_, C, r, c, eps, iter_max=100000000):
     """
     Algorithm 4. in Tianyi Lin, Nhat Ho, Michael I. Jordan (2019)
     Using phi = 1 / (2 n) ||x||^2_2.
     """
     n = C.shape[0]
-    if X is None:
-        X = jnp.ones((n, n)) / n ** 2
     eta = eps / (4 * jnp.log(n))
-    eps_p = eps / (8 * jnp.linalg.norm(C, ord=jnp.inf))
+    eps_p = eps / (8 * jnp.linalg.norm(C, ord=jnp.inf))  # apdamd tolerance
     r_tilde = (1 - eps_p / 8) * r + eps_p / (8 * n) * jnp.ones(n, )
     c_tilde = (1 - eps_p / 8) * c + eps_p / (8 * n) * jnp.ones(n, )
-    b = jnp.hstack([r_tilde, c_tilde])
-    vecX = jnp.reshape(X, (n ** 2,), order='F')
-    vecC = jnp.reshape(C, -1, order='F')
-
-    def f(x):  # x = vecX
-        return vecC @ x + penality(x, eta)
-
-    def A(x):
-        X = x.reshape(n, n, order='F')
-        return jnp.hstack((jnp.sum(X, axis=1), jnp.sum(X, axis=0)))
-
-    def At(x):
-        alpha = x.at[:n].get()
-        beta = x.at[n:].get()
-        return jnp.add(alpha.reshape(n, 1), beta).flatten()
-
-    def phi(x):
-        return 1 / (2 * n) * jnp.linalg.norm(x, ord=2) ** 2
-
-    def bregman_phi(x, x_p):
-        return 1 / (2 * n) * jnp.linalg.norm(x - x_p, ord=2) ** 2
-
-    def x_fun(Lamb, x):  # argmin_x f(x) + <A.T @ Lambda, x>
-        return jnp.exp(-(vecC.T + At(Lamb)) / eta - 1)
-
-    def varphi_tilde(Lambd):
-        alpha = Lambd.at[:n].get()
-        beta = Lambd.at[n:].get()
-        return Lambd @ b - eta * jnp.log(
-            jnp.einsum("i,j,ij->", jnp.exp(alpha / eta), jnp.exp(beta / eta), jnp.exp(-C / eta)))
-
-    bregman_varphi_tilde = bregman_divergence(varphi_tilde)
-
-    def bregman_varphi_tilde(x, y):
-        return varphi_tilde(x) - varphi_tilde(y) - (x - y).T @ (b - A(x_fun(y, None)))
-
-    def z_fun(z, mu, alpha):
-        # return z - alpha * n * jax.grad(varphi_tilde)(mu)
-        return z - alpha * n * (b - A(x_fun(mu, None)))
-
     delta = n
-
     if iter_max is None:
         iter_max = theoretical_bound_on_iter(C, r, c, eps, delta)
         iter_max = jnp.min(jnp.array([1e10, jnp.int64(iter_max)]))
 
-    x_tilde, n_iter = apdamd(varphi=varphi_tilde, bregman_varphi=bregman_varphi_tilde, x=vecX, A=A, At=At, b=b,
-                             eps_p=eps_p / 2, f=f, bregman_phi=bregman_phi, phi=phi, delta=delta,
-                             x_fun=x_fun, z_fun=z_fun,
-                             iter_max=iter_max)
-    X_tilde = jnp.reshape(x_tilde, (n, n), order='F')
-    X_hat = Round(X_tilde, r, c)
+    x_tilde, n_iter = apdamd(C, r_tilde, c_tilde, eta, eps_p / 2, iter_max)
+
+    X_hat = Round(x_tilde.reshape(n, n), r, c)
     return X_hat, n_iter

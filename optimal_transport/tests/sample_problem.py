@@ -54,6 +54,7 @@ def sample_gaussian_OT(n, N_samples, Gaussians=None):
 
 
 def sample_gaussian_OT_exact(N, n, Gaussians=None):
+    np.random.seed(0)
     vmin = 0.01
     if Gaussians is None:
         m1 = np.random.randn(n)

@@ -3,6 +3,8 @@ from optimal_transport.ot import Round
 from optimal_transport.greenkhorn.greenkhorn import greenkhorn
 import jax
 
+jax.config.update("jax_enable_x64", True)
+
 
 def theoretical_bound_on_iter(C, r, c, eps):
     n = C.shape[0]
