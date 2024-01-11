@@ -10,8 +10,8 @@ from optimal_transport.ot import penalised_cost
 
 # Create the problem
 n = 1  # dim
-N = 30  # number of points
-eps = 0.06
+N = 40  # number of points
+eps = 0.1
 Gaussian1 = (np.zeros(n), np.eye(n))
 Gaussian2 = (np.ones(n), np.eye(n) + np.triu(np.ones((n, n))) * 0.5)
 my_problem = sample_gaussian_OT_exact(N, n, (Gaussian1, Gaussian2))
