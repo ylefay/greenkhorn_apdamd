@@ -47,5 +47,5 @@ def Round(F, r, c):
     err_r = r - r_fun(F_pp)
     err_c = c - c_fun(F_pp)
     if jnp.linalg.norm(err_r) > 0:
-        return F_pp + err_r.T @ err_c / jnp.linalg.norm(err_r, ord=1)
+        return F_pp + err_r @ err_c.T / jnp.linalg.norm(err_r, ord=1)
     return F_pp

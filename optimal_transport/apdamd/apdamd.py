@@ -5,6 +5,10 @@ from optimal_transport.ot import r_fun, c_fun
 
 jax.config.update("jax_enable_x64", True)
 
+"""
+https://jmlr.org/papers/volume23/20-277/20-277.pdf
+"""
+
 
 class F:
     """
@@ -21,10 +25,10 @@ class F:
         self.eta = eta
 
     def __call__(self, x):
-        return jnp.dot(self.c, x) + self.eta * xlogy(x, x).sum()
+        return jnp.dot(self.c, x) + self.eta * (xlogy(x, x) - x).sum()  # there was a mistake here  +x
 
     def grad(self, x):
-        return self.c + self.eta + jnp.log(x) + self.eta
+        return self.c + self.eta * jnp.log(x)  # there was a mistake here  + self.eta
 
 
 class Phi:
@@ -58,7 +62,7 @@ class Phi:
             y: column dual variables, of shape (n,)
             z: row dual variables, of shape (n,)
         """
-        X = (1 / jnp.e) * jnp.exp(-z / self.eta) * (jnp.exp(-y / self.eta) * self.gibbs.T).T
+        X = jnp.exp(-z / self.eta) * (jnp.exp(-y / self.eta) * self.gibbs.T).T  # 1/jnp.exp(1) *
         return X.flatten()
 
     def _A_transpose_lambda(self, y, z):
@@ -106,8 +110,12 @@ def apdamd(C, r, c, eta, tol, iter_max):
     Adaptive Primal-Dual Accelerated Mirror Descent algorithm.
     JAX adaptation of https://github.com/joshnguyen99/partialot/blob/d7387fa3cee7fcecc4c3fa3b020bcec834798a6a/ot_solvers/apdamd.py#L75
 
-    This implementation is based on Lin, Ho and Jordan 2019. It uses delta = n
-    and B_phi(lambda1, lambda2) = (1 / 2n) ||lambda1 - lambda2||^2.
+    ///
+    This implementation is based on Lin, Ho and Jordan NO:2019.
+    ///
+
+    This implementation is based on https://jmlr.org/papers/volume23/20-277/20-277.pdf
+    It uses delta = n and B_phi(lambda1, lambda2) = (1 / 2n) ||lambda1 - lambda2||^2.
 
 
     returns:
@@ -148,7 +156,7 @@ def apdamd(C, r, c, eta, tol, iter_max):
 
         # Compute the mirror descent
         grad_phi_mu_t_1 = phi.grad(mu_t_1)
-        z_t_1 = z_t - alpha_t_1 * grad_phi_mu_t_1
+        z_t_1 = z_t - 2 * n * alpha_t_1 * grad_phi_mu_t_1
 
         # Compute the second average step
         lamb_t_1 = (alpha_t_1 * z_t_1 + alpha_bar_t * lamb_t) / alpha_bar_t_1

@@ -67,9 +67,11 @@ def sample_gaussian_OT_exact(N, n, Gaussians=None):
         m1, cov1 = Gaussians[0]
         m2, cov2 = Gaussians[1]
     sigma1 = np.linalg.cholesky(cov1)
+    eig1 = np.linalg.eig(sigma1)[1]
     sigma2 = np.linalg.cholesky(cov2)
-    t1 = np.linspace(m1 - 2 * sigma1, m1 + 2 * sigma1, N).reshape((N, n))
-    t2 = np.linspace(m2 - 2 * sigma2, m2 + 2 * sigma2, N).reshape((N, n))
+    eig2 = np.linalg.eig(sigma2)[1]
+    t1 = np.linspace(m1 - 2 * np.max(eig1, axis=-1), m1 + 2 * np.max(eig1, axis=-1), N)
+    t2 = np.linspace(m2 - 2 * np.max(eig2, axis=-1), m2 + 2 * np.max(eig2, axis=-1), N)
     r = pdf(t1, m1, cov1)
     r += np.max(r) * vmin
     c = pdf(t2, m2, cov2)
@@ -80,7 +82,7 @@ def sample_gaussian_OT_exact(N, n, Gaussians=None):
     t22 = np.sum(t2 ** 2, axis=1)
     t1xt2 = np.dot(t1, t2.T)
     t12 = t12.reshape(-1, 1)
-    C = np.sqrt(t12 + t22 - 2 * t1xt2)
+    C = (t12 + t22 - 2 * t1xt2)
 
     OT = np.random.rand(N ** 2).reshape((N, N))
     OT = Round(OT, r, c)

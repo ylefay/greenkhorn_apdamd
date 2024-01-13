@@ -30,7 +30,7 @@ def OT(_, C, r, c, eps, iter_max=100000000):
     c_tilde = (1 - eps_p / 8) * c + eps_p / (8 * n) * jnp.ones(n, )
     delta = n
     if iter_max is None:
-        iter_max = theoretical_bound_on_iter(C, r, c, eps, delta)
+        iter_max = theoretical_bound_on_iter(C, r_tilde, c_tilde, eps_p / 2, delta)
         iter_max = jnp.min(jnp.array([1e10, jnp.int64(iter_max)]))
 
     x_tilde, n_iter = apdamd(C, r_tilde, c_tilde, eta, eps_p / 2, iter_max)

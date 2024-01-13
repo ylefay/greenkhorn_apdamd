@@ -15,7 +15,7 @@ def greenkhorn(X, C, eta, r, c, tol, iter_max):
     """
     n = C.shape[0]
     if X is None:
-        u, v = - jnp.log(n) * jnp.ones(n), - jnp.log(n) * jnp.ones(n)
+        u, v = jnp.zeros(n, ), jnp.zeros(n, )
         Buv = jnp.diag(jnp.exp(u)) @ jnp.exp(-C / eta) @ jnp.diag(jnp.exp(v))
     else:
         Buv = X
