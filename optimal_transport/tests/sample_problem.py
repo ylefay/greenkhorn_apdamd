@@ -1,6 +1,6 @@
 import numpy as np
 from optimal_transport.ot import Round
-from optimal_transport.gaussian_ot import pdf
+from optimal_transport.gaussian_ot import pdf, optimal_cost_for_gaussian
 import jax
 
 jax.config.update("jax_enable_x64", True)
@@ -53,7 +53,7 @@ def sample_gaussian_OT(n, N_samples, Gaussians=None):
     return X.astype(np.float64), C.astype(np.float64), r.astype(np.float64), c.astype(np.float64)
 
 
-def sample_gaussian_OT_exact(N, n, Gaussians=None):
+def sample_gaussian_OT_exact(N, n, Gaussians=None, print_optimal_cost=False):
     np.random.seed(0)
     vmin = 0.01
     if Gaussians is None:
@@ -87,4 +87,7 @@ def sample_gaussian_OT_exact(N, n, Gaussians=None):
     OT = np.random.rand(N ** 2).reshape((N, N))
     OT = Round(OT, r, c)
     OT /= np.sum(OT)
+
+    if print_optimal_cost:
+        print(f"Optimal cost:{optimal_cost_for_gaussian((m1, cov1), (m2, cov2))}")
     return OT.astype(np.float64), C.astype(np.float64), r.astype(np.float64), c.astype(np.float64)
