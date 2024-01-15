@@ -32,8 +32,8 @@ def bures_metric(sigma1, sigma2):
     """
     Equation 2.42 from Computational Optimal Transport (Peyré, Cuturi, 2019)
     """
-    sqrt_sigma1 = jnp.linalg.cholesky(sigma1)
-    return jnp.trace(sigma1 + sigma2 - 2 * jnp.linalg.cholesky(sqrt_sigma1 @ sigma2 @ sqrt_sigma1))
+    sqrt_sigma1 = jnp.real(jax.scipy.linalg.sqrtm(sigma1))
+    return jnp.sqrt(jnp.trace(sigma1 + sigma2 - 2 * jnp.real(jax.scipy.linalg.sqrtm(sqrt_sigma1 @ sigma2 @ sqrt_sigma1))))
 
 
 def optimal_cost_for_gaussian(Gaussian_1, Gaussian_2):
@@ -42,4 +42,4 @@ def optimal_cost_for_gaussian(Gaussian_1, Gaussian_2):
     """
     m1, cov1 = Gaussian_1
     m2, cov2 = Gaussian_2
-    return jnp.linalg.norm(m1 - m2, ord=2) ** 2 + bures_metric(cov1, cov2) ** 2
+    return (jnp.linalg.norm(m1 - m2, ord=2) ** 2 + bures_metric(cov1, cov2) ** 2)

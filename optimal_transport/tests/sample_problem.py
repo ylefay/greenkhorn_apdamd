@@ -55,7 +55,7 @@ def sample_gaussian_OT(n, N_samples, Gaussians=None):
 
 def sample_gaussian_OT_exact(N, n, Gaussians=None, print_optimal_cost=False):
     np.random.seed(0)
-    vmin = 0.01
+    vmin = 0.001
     if Gaussians is None:
         m1 = np.random.randn(n)
         m2 = np.random.randn(n)
@@ -67,11 +67,17 @@ def sample_gaussian_OT_exact(N, n, Gaussians=None, print_optimal_cost=False):
         m1, cov1 = Gaussians[0]
         m2, cov2 = Gaussians[1]
     sigma1 = np.linalg.cholesky(cov1)
-    eig1 = np.linalg.eig(sigma1)[1]
+    eig1 = np.linalg.eig(sigma1)
+    eig_v1 = np.max(np.abs(eig1[1]), axis=-1)
+    eig_l1 = np.max(np.abs(eig1[0]))
     sigma2 = np.linalg.cholesky(cov2)
-    eig2 = np.linalg.eig(sigma2)[1]
-    t1 = np.linspace(m1 - 2 * np.max(eig1, axis=-1), m1 + 2 * np.max(eig1, axis=-1), N)
-    t2 = np.linspace(m2 - 2 * np.max(eig2, axis=-1), m2 + 2 * np.max(eig2, axis=-1), N)
+    eig2 = np.linalg.eig(sigma2)
+    eig_v2 = np.max(np.abs(eig2[1]), axis=-1)
+    eig_l2 = np.max(np.abs(eig2[0]))
+    t1 = np.linspace(m1 - 2 * eig_l1 * eig_v1,
+                     m1 + 2 * eig_l1 * eig_v1, N)
+    t2 = np.linspace(m2 - 2 * eig_l2 * eig_v2,
+                     m2 + 2 * eig_l2 * eig_v2, N)
     r = pdf(t1, m1, cov1)
     r += np.max(r) * vmin
     c = pdf(t2, m2, cov2)
@@ -83,7 +89,6 @@ def sample_gaussian_OT_exact(N, n, Gaussians=None, print_optimal_cost=False):
     t1xt2 = np.dot(t1, t2.T)
     t12 = t12.reshape(-1, 1)
     C = (t12 + t22 - 2 * t1xt2)
-
     OT = np.random.rand(N ** 2).reshape((N, N))
     OT = Round(OT, r, c)
     OT /= np.sum(OT)
